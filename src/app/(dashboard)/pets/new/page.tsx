@@ -39,7 +39,7 @@ export default function NewPetPage() {
   return (
     <div className="p-8 max-w-2xl">
       <Breadcrumb
-        items={[{ label: "Pets", href: "/pets" }, { label: "New Pet" }]}
+        items={[{ label: "Mascotas", href: "/pets" }, { label: "Nueva mascota" }]}
       />
       <div className="flex items-center gap-3 mb-6">
         <BackButton />
@@ -50,7 +50,7 @@ export default function NewPetPage() {
         {owners.length === 0 ? (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 text-amber-600 text-sm px-4 py-3 rounded-xl">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            Please register an owner before adding a pet
+            Porfavor registra un dueño antes de registrar una mascota.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,7 +64,7 @@ export default function NewPetPage() {
             {/* Photo upload */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-600">
-                Photo (optional)
+                Foto (opcional)
               </label>
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-2xl bg-zinc-100 flex items-center justify-center overflow-hidden">
@@ -103,13 +103,13 @@ export default function NewPetPage() {
                   id: "species",
                   label: "Especie",
                   type: "text",
-                  placeholder: "Cat",
+                  placeholder: "Gato",
                 },
                 {
                   id: "breed",
                   label: "Raza",
                   type: "text",
-                  placeholder: "Siamese",
+                  placeholder: "Siames",
                 },
                 {
                   id: "birthDate",
@@ -141,7 +141,7 @@ export default function NewPetPage() {
                   htmlFor="gender"
                   className="text-sm font-medium text-zinc-600"
                 >
-                  Gender
+                  Género
                 </label>
                 <select
                   id="gender"
@@ -160,7 +160,7 @@ export default function NewPetPage() {
                   htmlFor="ownerId"
                   className="text-sm font-medium text-zinc-600"
                 >
-                  Owner
+                  Dueño
                 </label>
                 <select
                   id="ownerId"

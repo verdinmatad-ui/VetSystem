@@ -97,7 +97,7 @@ export default function MedicalFilters({
           }
         >
           <ArrowUpDown className="w-3 h-3" />
-          {order === "asc" ? "Oldest first" : "Newest first"}
+          {order === "asc" ? "Más antiguo primero" : "Más nuevo primero"}
         </button>
 
         {/* Weight order */}

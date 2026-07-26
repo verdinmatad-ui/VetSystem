@@ -32,7 +32,7 @@ export default function NewOwnerPage() {
   return (
     <div className="p-8 max-w-2xl">
       <Breadcrumb
-        items={[{ label: "Owners", href: "/owners" }, { label: "New Owner" }]}
+        items={[{ label: "Dueños", href: "/owners" }, { label: "Nuevo dueño" }]}
       />
       <div className="flex items-center gap-3 mb-6">
         <BackButton />
@@ -92,7 +92,7 @@ export default function NewOwnerPage() {
                 htmlFor="gender"
                 className="text-sm font-medium text-zinc-600"
               >
-                Gender
+                Género
               </label>
               <select
                 id="gender"

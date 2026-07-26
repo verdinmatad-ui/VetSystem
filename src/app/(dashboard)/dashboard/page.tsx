@@ -89,7 +89,7 @@ export default async function DashboardPage() {
             {todayAppointments.length}
           </p>
           <p className="text-xs text-zinc-400 mt-1">
-            {completed} completed · {pending} pending
+            {completed} completadas · {pending} pendientes
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
-              Low Stock Alerts
+              Alertas de inventario bajo
             </p>
             <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-5">
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <p className="text-sm font-semibold text-zinc-700 mb-4">
-            Today's Appointments
+            Citas de hoy
           </p>
           {todayAppointments.length === 0 ? (
             <p className="text-sm text-zinc-400">
@@ -175,7 +175,7 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-semibold text-zinc-700">
-              Low Stock Alerts
+              Alertas de inventario bajo
             </p>
             <Link
               href="/inventory/alerts"

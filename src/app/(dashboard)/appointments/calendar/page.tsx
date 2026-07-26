@@ -18,12 +18,12 @@ export default async function CalendarPage() {
   return (
     <div className="p-8">
       <Breadcrumb items={[
-        { label: "Appointments", href: "/appointments" },
-        { label: "Calendar" },
+        { label: "Citas", href: "/appointments" },
+        { label: "Calendario" },
       ]} />
       <AppointmentTabs />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-zinc-800">Appointment Calendar</h1>
+        <h1 className="text-xl font-semibold text-zinc-800">Calendario de Citas</h1>
       </div>
       <div className="bg-white rounded-2xl shadow-sm p-5">
         <AppointmentCalendar events={events} />

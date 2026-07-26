@@ -27,12 +27,12 @@ export default async function PetProfilePage({
 
   const breadcrumbItems = via === "owner"
     ? [
-        { label: "Owners", href: "/owners" },
+        { label: "Dueños", href: "/owners" },
         { label: pet.owner.name, href: `/owners/${pet.owner.id}` },
         { label: pet.name },
       ]
     : [
-        { label: "Pets", href: "/pets" },
+        { label: "Mascotas", href: "/pets" },
         { label: pet.name },
       ];
 const isAdmin = await isCurrentUserAdmin();
@@ -50,7 +50,7 @@ const isAdmin = await isCurrentUserAdmin();
   id={pet.id}
   type="pet"
   redirectTo="/pets"
-  confirmMessage="Are you sure you want to delete this pet? This action cannot be undone."
+  confirmMessage="¿Estás seguro de que deseas eliminar esta mascota? Esta acción no se puede deshacer."
   isAdmin={isAdmin}
 />
           <Link
@@ -140,7 +140,7 @@ const isAdmin = await isCurrentUserAdmin();
               href={`/pets/${pet.id}/medical`}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
             >
-              View all
+              Ver todos
             </Link>
           </div>
           {pet.medicalRecords.length === 0 ? (
@@ -196,7 +196,7 @@ const isAdmin = await isCurrentUserAdmin();
               href={`/pets/${pet.id}/vaccinations`}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
             >
-              View all
+              Ver todos
             </Link>
           </div>
           {pet.vaccinations.length === 0 ? (

@@ -71,7 +71,7 @@ export default async function MedicalHistoryPage({
     <div className="p-8 max-w-2xl">
       <Breadcrumb
         items={[
-          { label: "Pets", href: "/pets" },
+          { label: "Mascotas", href: "/pets" },
           { label: pet.name, href: `/pets/${id}` },
           { label: "Historial médico" },
         ]}
@@ -140,23 +140,23 @@ export default async function MedicalHistoryPage({
                     type="medical"
                     petId={id}
                     redirectTo={`/pets/${id}/medical`}
-                    confirmMessage="Are you sure you want to delete this medical record?"
+                    confirmMessage="¿Estás seguro de que deseas eliminar este registro médico?"
                     isAdmin={isAdmin}
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <div>
-                  <p className="text-xs text-zinc-400">Diagnosis</p>
+                  <p className="text-xs text-zinc-400">Diagnóstico</p>
                   <p className="text-sm text-zinc-700">{record.diagnosis}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-400">Treatment</p>
+                  <p className="text-xs text-zinc-400">Tratamiento</p>
                   <p className="text-sm text-zinc-700">{record.treatment}</p>
                 </div>
                 {record.notes && (
                   <div>
-                    <p className="text-xs text-zinc-400">Notes</p>
+                    <p className="text-xs text-zinc-400">Notas</p>
                     <p className="text-sm text-zinc-700">{record.notes}</p>
                   </div>
                 )}

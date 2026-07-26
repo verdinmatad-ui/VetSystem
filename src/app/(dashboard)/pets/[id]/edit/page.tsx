@@ -113,14 +113,14 @@ export default function EditPetPage() {
                 id: "species",
                 label: "Especie",
                 type: "text",
-                placeholder: "Cat",
+                placeholder: "Gato",
                 defaultValue: pet.species,
               },
               {
                 id: "breed",
                 label: "Raza",
                 type: "text",
-                placeholder: "Siamese",
+                placeholder: "Siames",
                 defaultValue: pet.breed,
               },
               {
@@ -157,7 +157,7 @@ export default function EditPetPage() {
                 htmlFor="gender"
                 className="text-sm font-medium text-zinc-600"
               >
-                Gender
+                Género
               </label>
               <select
                 id="gender"
@@ -177,7 +177,7 @@ export default function EditPetPage() {
                 htmlFor="ownerId"
                 className="text-sm font-medium text-zinc-600"
               >
-                Owner
+                Dueño
               </label>
               <select
                 id="ownerId"
@@ -208,7 +208,7 @@ export default function EditPetPage() {
               href="/pets"
               className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
             >
-              Cancel
+              Cancelar
             </Link>
           </div>
         </form>

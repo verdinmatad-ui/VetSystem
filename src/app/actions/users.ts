@@ -92,3 +92,44 @@ export async function getUserById(id: number) {
     select: { id: true, name: true, email: true, role: true },
   });
 }
+
+export async function changeUserPassword(id: number, formData: FormData) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
+  const password = formData.get("password") as string;
+
+  if (!password) {
+    return { error: "Password is required" };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
+  }
+
+  const targetUser = await prisma.user.findUnique({ where: { id } });
+  if (!targetUser) return { error: "User not found" };
+
+  const currentUserId = parseInt(session.user?.id as string);
+  const isTargetSelf = targetUser.id === currentUserId;
+
+  if (targetUser.role === "admin" && !isTargetSelf) {
+    return { error: "You cannot change another administrator's password" };
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+
+  await prisma.user.update({
+    where: { id },
+    data: { password: hashed },
+  });
+
+  revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function getCurrentUserId() {
+  const session = await verifyAdmin();
+  if (!session) return null;
+  return parseInt(session.user?.id as string);
+}

@@ -34,7 +34,7 @@ export default async function OwnerProfilePage({
   return (
     <div className="p-8 max-w-2xl">
       <Breadcrumb
-        items={[{ label: "Owners", href: "/owners" }, { label: owner.name }]}
+        items={[{ label: "Dueños", href: "/owners" }, { label: owner.name }]}
       />
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -48,7 +48,7 @@ export default async function OwnerProfilePage({
             id={owner.id}
             type="owner"
             redirectTo="/owners"
-            confirmMessage="Are you sure you want to delete this owner? This action cannot be undone."
+            confirmMessage="¿Estás seguro de que deseas eliminar este dueño? Esta acción no se puede deshacer."
             isAdmin={isAdmin}
           />
           <Link

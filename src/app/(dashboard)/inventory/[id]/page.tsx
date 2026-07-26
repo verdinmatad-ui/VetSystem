@@ -30,7 +30,7 @@ export default async function InventoryItemPage({
     <div className="p-8 max-w-2xl">
       <Breadcrumb
         items={[
-          { label: "Inventory", href: "/inventory" },
+          { label: "Inventario", href: "/inventory" },
           { label: item.name },
         ]}
       />
