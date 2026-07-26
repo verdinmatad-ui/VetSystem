@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { verifyAdmin } from "@/lib/auth-helpers";
+import { fieldErrorResponse, successResponse } from "@/lib/validation";
 
 export async function createInventoryItem(formData: FormData) {
   const name = formData.get("name") as string;
@@ -11,21 +12,30 @@ export async function createInventoryItem(formData: FormData) {
   const unit = formData.get("unit") as string;
   const minStock = formData.get("minStock") as string;
 
-  if (!name || !category || !unit || !minStock) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!name?.trim()) fieldErrors.name = "El nombre es requerido";
+  else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s-]{2,100}$/.test(name)) {
+    fieldErrors.name = "El nombre debe contener solo letras, números y guiones (2-100)";
   }
 
-  if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s-]{2,100}$/.test(name)) {
-  return { error: "Name must contain only letters, numbers, spaces and hyphens, 2-100 characters" };
-}
+  if (!category) fieldErrors.category = "La categoría es requerida";
 
-  if (!/^[a-zA-Z/]{1,30}$/.test(unit)) {
-    return { error: "Unit must contain only letters and slashes" };
+  if (!unit?.trim()) fieldErrors.unit = "La unidad es requerida";
+  else if (!/^[a-zA-Z/]{1,30}$/.test(unit)) {
+    fieldErrors.unit = "La unidad debe contener solo letras y barras diagonales";
   }
 
-  const minStockNum = parseInt(minStock);
-  if (isNaN(minStockNum) || minStockNum <= 0 || !Number.isInteger(minStockNum)) {
-    return { error: "Minimum stock must be a positive integer greater than zero" };
+  if (!minStock?.trim()) fieldErrors.minStock = "El stock mínimo es requerido";
+  else {
+    const minStockNum = parseInt(minStock);
+    if (isNaN(minStockNum) || minStockNum <= 0 || !Number.isInteger(minStockNum)) {
+      fieldErrors.minStock = "El stock mínimo debe ser un número entero positivo";
+    }
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa los campos correctamente", fieldErrors);
   }
 
   await prisma.inventoryItem.create({
@@ -33,13 +43,13 @@ export async function createInventoryItem(formData: FormData) {
       name,
       category: category as any,
       unit,
-      minStock: minStockNum,
+      minStock: parseInt(minStock),
       quantity: 0,
     },
   });
 
   revalidatePath("/inventory");
-  return { success: true };
+  return successResponse();
 }
 
 export async function updateInventoryItem(id: number, formData: FormData) {
@@ -48,21 +58,30 @@ export async function updateInventoryItem(id: number, formData: FormData) {
   const unit = formData.get("unit") as string;
   const minStock = formData.get("minStock") as string;
 
-  if (!name || !category || !unit || !minStock) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!name?.trim()) fieldErrors.name = "El nombre es requerido";
+  else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s-]{2,100}$/.test(name)) {
+    fieldErrors.name = "El nombre debe contener solo letras, números y guiones (2-100)";
   }
 
-  if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s-]{2,100}$/.test(name)) {
-  return { error: "Name must contain only letters, numbers, spaces and hyphens, 2-100 characters" };
-}
+  if (!category) fieldErrors.category = "La categoría es requerida";
 
-  if (!/^[a-zA-Z/]{1,30}$/.test(unit)) {
-    return { error: "Unit must contain only letters and slashes" };
+  if (!unit?.trim()) fieldErrors.unit = "La unidad es requerida";
+  else if (!/^[a-zA-Z/]{1,30}$/.test(unit)) {
+    fieldErrors.unit = "La unidad debe contener solo letras y barras diagonales";
   }
 
-  const minStockNum = parseInt(minStock);
-  if (isNaN(minStockNum) || minStockNum <= 0 || !Number.isInteger(minStockNum)) {
-    return { error: "Minimum stock must be a positive integer greater than zero" };
+  if (!minStock?.trim()) fieldErrors.minStock = "El stock mínimo es requerido";
+  else {
+    const minStockNum = parseInt(minStock);
+    if (isNaN(minStockNum) || minStockNum <= 0 || !Number.isInteger(minStockNum)) {
+      fieldErrors.minStock = "El stock mínimo debe ser un número entero positivo";
+    }
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa los campos correctamente", fieldErrors);
   }
 
   await prisma.inventoryItem.update({
@@ -71,41 +90,51 @@ export async function updateInventoryItem(id: number, formData: FormData) {
       name,
       category: category as any,
       unit,
-      minStock: minStockNum,
+      minStock: parseInt(minStock),
     },
   });
 
   revalidatePath("/inventory");
   revalidatePath(`/inventory/${id}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function createStockMovement(itemId: number, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Unauthorized" };
+  if (!session?.user?.id) return fieldErrorResponse("No autorizado");
 
   const type = formData.get("type") as string;
   const quantity = formData.get("quantity") as string;
   const notes = formData.get("notes") as string;
 
-  if (!type || !quantity) {
-    return { error: "Type and quantity are required" };
-  }
+  const fieldErrors: Record<string, string> = {};
 
-  const quantityNum = parseInt(quantity);
-  if (isNaN(quantityNum) || quantityNum <= 0 || !Number.isInteger(quantityNum)) {
-    return { error: "Quantity must be a positive integer greater than zero" };
+  if (!type) fieldErrors.type = "El tipo de movimiento es requerido";
+  if (!quantity?.trim()) fieldErrors.quantity = "La cantidad es requerida";
+  else {
+    const quantityNum = parseInt(quantity);
+    if (isNaN(quantityNum) || quantityNum <= 0 || !Number.isInteger(quantityNum)) {
+      fieldErrors.quantity = "La cantidad debe ser un número entero positivo";
+    }
   }
 
   if (notes && notes.length > 255) {
-    return { error: "Notes must not exceed 255 characters" };
+    fieldErrors.notes = "Las notas no deben exceder 255 caracteres";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa los campos correctamente", fieldErrors);
   }
 
   const item = await prisma.inventoryItem.findUnique({ where: { id: itemId } });
-  if (!item) return { error: "Item not found" };
+  if (!item) return fieldErrorResponse("Artículo no encontrado");
 
+  const quantityNum = parseInt(quantity);
   if (type === "out" && item.quantity - quantityNum < 0) {
-    return { error: `Insufficient stock. Current stock is ${item.quantity} ${item.unit}.` };
+    return fieldErrorResponse(
+      `Stock insuficiente. El stock actual es ${item.quantity} ${item.unit}.`,
+      { quantity: `No hay suficiente stock disponible` }
+    );
   }
 
   await prisma.$transaction([
@@ -128,7 +157,7 @@ export async function createStockMovement(itemId: number, formData: FormData) {
 
   revalidatePath(`/inventory/${itemId}`);
   revalidatePath("/inventory");
-  return { success: true };
+  return successResponse();
 }
 
 export async function getInventoryItems(filters?: { search?: string; category?: string }) {

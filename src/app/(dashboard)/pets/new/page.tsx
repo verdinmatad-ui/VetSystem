@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation";
 import { Save, AlertCircle, Upload } from "lucide-react";
 import BackButton from "@/components/back-button";
 import CancelButton from "@/components/cancel-button";
+import { FormError, FieldError } from "@/components/form-error";
 import toast from "react-hot-toast";
 import Breadcrumb from "@/components/breadcrumb";
+import type { ActionResponse } from "@/lib/validation";
 
 export default function NewPetPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [owners, setOwners] = useState<any[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
@@ -24,28 +26,33 @@ export default function NewPetPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await createPet(formData);
-    if (result.error) {
-      setError(result.error);
+
+    if (result.success) {
+      toast.success("Mascota registrada correctamente");
+      router.push("/pets");
+    } else {
+      setResponse(result);
       setLoading(false);
-      return;
+      toast.error(result.error);
     }
-    toast.success("Mascota registrada correctamente");
-    router.push("/pets");
   }
 
   return (
     <div className="p-8 max-w-2xl">
       <Breadcrumb
-        items={[{ label: "Mascotas", href: "/pets" }, { label: "Nueva mascota" }]}
+        items={[
+          { label: "Mascotas", href: "/pets" },
+          { label: "Nueva mascota" },
+        ]}
       />
       <div className="flex items-center gap-3 mb-6">
         <BackButton />
         <h1 className="text-xl font-semibold text-zinc-800">Nueva mascota</h1>
       </div>
-      
+
       <div className="bg-white rounded-2xl shadow-sm p-6">
         {owners.length === 0 ? (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 text-amber-600 text-sm px-4 py-3 rounded-xl">
@@ -54,14 +61,13 @@ export default function NewPetPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
-              </div>
+            {response && !response.success && (
+              <FormError
+                error={response.error}
+                fieldErrors={response.fieldErrors}
+              />
             )}
 
-            {/* Photo upload */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-600">
                 Foto (opcional)
@@ -89,6 +95,10 @@ export default function NewPetPage() {
                   className="text-sm text-zinc-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-50 file:text-emerald-700 file:text-sm file:font-medium hover:file:bg-emerald-100 transition"
                 />
               </div>
+              <FieldError
+                fieldName="photo"
+                fieldErrors={response?.fieldErrors}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -133,9 +143,15 @@ export default function NewPetPage() {
                     required
                     className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                   />
+                  <FieldError
+                    fieldName={field.id}
+                    fieldErrors={response?.fieldErrors}
+                  />
                 </div>
               ))}
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label
                   htmlFor="gender"
@@ -153,6 +169,10 @@ export default function NewPetPage() {
                   <option value="male">Macho</option>
                   <option value="female">Hembra</option>
                 </select>
+                <FieldError
+                  fieldName="gender"
+                  fieldErrors={response?.fieldErrors}
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -175,6 +195,10 @@ export default function NewPetPage() {
                     </option>
                   ))}
                 </select>
+                <FieldError
+                  fieldName="ownerId"
+                  fieldErrors={response?.fieldErrors}
+                />
               </div>
             </div>
 
@@ -185,7 +209,7 @@ export default function NewPetPage() {
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
               >
                 <Save className="w-4 h-4" />
-                {loading ? "Guardando..." : "Guardar mascota"}
+                {loading ? "Guardando..." : "Registrar mascota"}
               </button>
               <CancelButton />
             </div>

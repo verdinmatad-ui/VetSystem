@@ -4,20 +4,36 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { verifyAdmin } from "@/lib/auth-helpers";
+import { fieldErrorResponse, successResponse } from "@/lib/validation";
 
 export async function createAppointment(formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Unauthorized" };
+  if (!session?.user?.id) return fieldErrorResponse("No autorizado");
 
   const petId = formData.get("petId") as string;
   const date = formData.get("date") as string;
   const reason = formData.get("reason") as string;
 
-  if (!petId || !date || !reason) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!petId?.trim()) fieldErrors.petId = "Debes seleccionar una mascota";
+  if (!date?.trim()) fieldErrors.date = "La fecha y hora son requeridas";
+  if (!reason?.trim()) fieldErrors.reason = "El motivo es requerido";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse(
+      "Por favor completa todos los campos requeridos",
+      fieldErrors,
+    );
   }
 
   const appointmentDate = new Date(date);
+
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (appointmentDate <= fiveMinutesAgo) {
+    fieldErrors.date = "La fecha y hora deben ser en el futuro";
+  }
+
   const windowStart = new Date(appointmentDate.getTime() - 30 * 60 * 1000);
   const windowEnd = new Date(appointmentDate.getTime() + 30 * 60 * 1000);
 
@@ -28,16 +44,16 @@ export async function createAppointment(formData: FormData) {
         gte: windowStart,
         lt: windowEnd,
       },
-      ...(petId
-        ? { NOT: { petId: parseInt(petId) === 0 ? -1 : undefined } }
-        : {}),
     },
   });
 
   if (duplicate) {
-    return {
-      error: `There is already an appointment at ${new Date(duplicate.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}. Please leave at least 30 minutes between appointments.`,
-    };
+    const time = new Date(duplicate.date).toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    fieldErrors.date = `Ya existe una cita a las ${time}. Deja al menos 30 minutos entre citas`;
+    return fieldErrorResponse("Conflicto de horario", fieldErrors);
   }
 
   await prisma.appointment.create({
@@ -51,7 +67,7 @@ export async function createAppointment(formData: FormData) {
   });
 
   revalidatePath("/appointments");
-  return { success: true };
+  return successResponse();
 }
 
 export async function updateAppointment(id: number, formData: FormData) {
@@ -59,11 +75,25 @@ export async function updateAppointment(id: number, formData: FormData) {
   const reason = formData.get("reason") as string;
   const petId = formData.get("petId") as string;
 
-  if (!date || !reason) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!date?.trim()) fieldErrors.date = "La fecha y hora son requeridas";
+  if (!reason?.trim()) fieldErrors.reason = "El motivo es requerido";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse(
+      "Por favor completa todos los campos requeridos",
+      fieldErrors,
+    );
   }
 
   const appointmentDate = new Date(date);
+
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (appointmentDate <= fiveMinutesAgo) {
+    fieldErrors.date = "La fecha y hora deben ser en el futuro";
+  }
+
   const windowStart = new Date(appointmentDate.getTime() - 30 * 60 * 1000);
   const windowEnd = new Date(appointmentDate.getTime() + 30 * 60 * 1000);
 
@@ -79,9 +109,12 @@ export async function updateAppointment(id: number, formData: FormData) {
   });
 
   if (duplicate) {
-    return {
-      error: `There is already an appointment at ${new Date(duplicate.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}. Please leave at least 30 minutes between appointments.`,
-    };
+    const time = new Date(duplicate.date).toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    fieldErrors.date = `Ya existe una cita a las ${time}. Deja al menos 30 minutos entre citas`;
+    return fieldErrorResponse("Conflicto de horario", fieldErrors);
   }
 
   await prisma.appointment.update({
@@ -91,10 +124,20 @@ export async function updateAppointment(id: number, formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath(`/appointments/${id}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function cancelAppointment(id: number) {
+  const appointment = await prisma.appointment.findUnique({ where: { id } });
+
+  if (!appointment) return fieldErrorResponse("Cita no encontrada");
+  if (appointment.status === "completed") {
+    return fieldErrorResponse("No puedes cancelar una cita completada");
+  }
+  if (appointment.status === "cancelled") {
+    return fieldErrorResponse("La cita ya está cancelada");
+  }
+
   await prisma.appointment.update({
     where: { id },
     data: { status: "cancelled" },
@@ -102,73 +145,37 @@ export async function cancelAppointment(id: number) {
 
   revalidatePath("/appointments");
   revalidatePath(`/appointments/${id}`);
-  return { success: true };
-}
-
-export async function getAppointments(filters?: {
-  status?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}) {
-  return prisma.appointment.findMany({
-    where: {
-      ...(filters?.status ? { status: filters.status as any } : {}),
-      ...(filters?.dateFrom || filters?.dateTo
-        ? {
-            date: {
-              ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
-              ...(filters.dateTo
-                ? { lte: new Date(filters.dateTo + "T23:59:59") }
-                : {}),
-            },
-          }
-        : {}),
-    },
-    include: {
-      pet: { include: { owner: true } },
-      user: { select: { name: true } },
-    },
-    orderBy: { date: "desc" },
-  });
-}
-
-export async function getAppointmentById(id: number) {
-  if (!id || isNaN(id)) return null;
-  return prisma.appointment.findUnique({
-    where: { id },
-    include: {
-      pet: { include: { owner: true } },
-      user: { select: { name: true } },
-    },
-  });
+  return successResponse();
 }
 
 export async function deleteAppointment(id: number) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   const appointment = await prisma.appointment.findUnique({ where: { id } });
 
-  if (!appointment) return { error: "Appointment not found" };
+  if (!appointment) return fieldErrorResponse("Cita no encontrada");
 
   if (appointment.status !== "cancelled") {
-    return { error: "Only cancelled appointments can be deleted" };
+    return fieldErrorResponse(
+      "Solo las citas canceladas pueden ser eliminadas",
+    );
   }
 
   await prisma.appointment.delete({ where: { id } });
   revalidatePath("/appointments");
-  return { success: true };
+  return successResponse();
 }
 
 export async function completeAppointment(id: number) {
   const appointment = await prisma.appointment.findUnique({ where: { id } });
 
-  if (!appointment) return { error: "Appointment not found" };
+  if (!appointment) return fieldErrorResponse("Cita no encontrada");
   if (appointment.status === "cancelled") {
-    return { error: "Cannot complete a cancelled appointment" };
+    return fieldErrorResponse("No puedes completar una cita cancelada");
   }
   if (appointment.status === "completed") {
-    return { error: "Appointment is already completed" };
+    return fieldErrorResponse("La cita ya está completada");
   }
 
   await prisma.appointment.update({
@@ -178,7 +185,7 @@ export async function completeAppointment(id: number) {
 
   revalidatePath("/appointments/today");
   revalidatePath(`/appointments/${id}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function getTodayAppointments() {
@@ -197,11 +204,42 @@ export async function getTodayAppointments() {
   });
 }
 
-export async function getAllAppointments() {
+export async function getAllAppointments(filters?: {
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  const where: any = {};
+
+  if (filters?.status) {
+    where.status = filters.status;
+  }
+
+  if (filters?.dateFrom || filters?.dateTo) {
+    where.date = {};
+    if (filters.dateFrom) {
+      where.date.gte = new Date(filters.dateFrom);
+    }
+    if (filters.dateTo) {
+      where.date.lte = new Date(filters.dateTo + "T23:59:59");
+    }
+  }
+
   return prisma.appointment.findMany({
+    where,
     include: {
       pet: { include: { owner: true } },
     },
     orderBy: { date: "asc" },
+  });
+}
+
+export async function getAppointmentById(id: number) {
+  return prisma.appointment.findUnique({
+    where: { id },
+    include: {
+      pet: { include: { owner: true } },
+      user: { select: { name: true } },
+    },
   });
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { updateOwner, getOwnerById } from "@/app/actions/owners";
+import type { ActionResponse } from "@/lib/validation";
+import { FormError, FieldError } from "@/components/form-error";
 import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
@@ -13,7 +15,7 @@ export default function EditOwnerPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [owner, setOwner] = useState<any>(null);
 
@@ -24,11 +26,11 @@ export default function EditOwnerPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await updateOwner(id, formData);
-    if (result.error) {
-      setError(result.error);
+    if (!result.success) {
+      setResponse(result);
       setLoading(false);
       return;
     }
@@ -57,11 +59,8 @@ export default function EditOwnerPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError error={response.error} fieldErrors={response.fieldErrors} />
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -104,6 +103,7 @@ export default function EditOwnerPage() {
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                 />
+                <FieldError fieldName={field.id} fieldErrors={response?.fieldErrors} />
               </div>
             ))}
 
@@ -112,7 +112,7 @@ export default function EditOwnerPage() {
                 htmlFor="gender"
                 className="text-sm font-medium text-zinc-600"
               >
-                Gender
+                Género
               </label>
               <select
                 id="gender"
@@ -126,6 +126,7 @@ export default function EditOwnerPage() {
                 <option value="female">Femenino</option>
                 <option value="other">Otro</option>
               </select>
+              <FieldError fieldName="gender" fieldErrors={response?.fieldErrors} />
             </div>
           </div>
 
@@ -185,6 +186,7 @@ export default function EditOwnerPage() {
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                 />
+                <FieldError fieldName={field.id} fieldErrors={response?.fieldErrors} />
               </div>
             ))}
           </div>

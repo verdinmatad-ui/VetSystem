@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
 import CancelButton from "@/components/cancel-button";
+import { FormError, FieldError } from "@/components/form-error";
 import Breadcrumb from "@/components/breadcrumb";
 import toast from "react-hot-toast";
+import type { ActionResponse } from "@/lib/validation";
 
 export default function NewAppointmentPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [pets, setPets] = useState<any[]>([]);
 
@@ -23,24 +25,28 @@ export default function NewAppointmentPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await createAppointment(formData);
-    if (result.error) {
-      setError(result.error);
+
+    if (result.success) {
+      toast.success("Cita agendada correctamente");
+      router.push("/appointments");
+    } else {
+      setResponse(result);
       setLoading(false);
-      return;
+      toast.error(result.error);
     }
-    toast.success("Cita agendada correctamente");
-    router.push("/appointments");
   }
 
   return (
     <div className="p-8 max-w-xl">
-      <Breadcrumb items={[
-        { label: "Appointments", href: "/appointments" },
-        { label: "Nueva cita" },
-      ]} />
+      <Breadcrumb
+        items={[
+          { label: "Citas", href: "/appointments" },
+          { label: "Nueva cita" },
+        ]}
+      />
       <div className="flex items-center gap-3 mb-6">
         <BackButton />
         <h1 className="text-xl font-semibold text-zinc-800">Nueva cita</h1>
@@ -54,17 +60,26 @@ export default function NewAppointmentPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
-              </div>
+            {response && !response.success && (
+              <FormError
+                error={response.error}
+                fieldErrors={response.fieldErrors}
+              />
             )}
 
             <div className="space-y-1.5">
-              <label htmlFor="petId" className="text-sm font-medium text-zinc-600">Mascota</label>
-              <select id="petId" name="petId" required
-                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+              <label
+                htmlFor="petId"
+                className="text-sm font-medium text-zinc-600"
+              >
+                Mascota
+              </label>
+              <select
+                id="petId"
+                name="petId"
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              >
                 <option value="">Selecciona una mascota</option>
                 {pets.map((pet) => (
                   <option key={pet.id} value={pet.id}>
@@ -72,24 +87,65 @@ export default function NewAppointmentPage() {
                   </option>
                 ))}
               </select>
+              <FieldError
+                fieldName="petId"
+                fieldErrors={response?.fieldErrors}
+              />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="date" className="text-sm font-medium text-zinc-600">Fecha y hora</label>
-              <input id="date" name="date" type="datetime-local" required
-                min={new Date().toISOString().slice(0, 16)}
-                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition" />
+              <label
+                htmlFor="date"
+                className="text-sm font-medium text-zinc-600"
+              >
+                Fecha y hora
+              </label>
+              <input
+                id="date"
+                name="date"
+                type="datetime-local"
+                required
+                min={new Date()
+                  .toLocaleString("sv-SE", {
+                    timeZone: "America/Mexico_City",
+                  })
+                  .replace(" ", "T")
+                  .slice(0, 16)}
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              />
+              <FieldError
+                fieldName="date"
+                fieldErrors={response?.fieldErrors}
+              />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="reason" className="text-sm font-medium text-zinc-600">Motivo</label>
-              <textarea id="reason" name="reason" rows={3} placeholder="Motivo de la visita..." required
-                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none" />
+              <label
+                htmlFor="reason"
+                className="text-sm font-medium text-zinc-600"
+              >
+                Motivo
+              </label>
+              <textarea
+                id="reason"
+                name="reason"
+                rows={3}
+                placeholder="Motivo de la visita..."
+                required
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none"
+              />
+              <FieldError
+                fieldName="reason"
+                fieldErrors={response?.fieldErrors}
+              />
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={loading}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+              >
                 <Save className="w-4 h-4" />
                 {loading ? "Guardando..." : "Agendar cita"}
               </button>

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createUser } from "@/app/actions/users";
+import type { ActionResponse } from "@/lib/validation";
+import { FormError, FieldError } from "@/components/form-error";
 import { useRouter } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
@@ -11,17 +13,17 @@ import toast from "react-hot-toast";
 
 export default function NewUserPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await createUser(formData);
-    if (result.error) {
-      setError(result.error);
+    if (!result.success) {
+      setResponse(result);
       setLoading(false);
       return;
     }
@@ -42,11 +44,8 @@ export default function NewUserPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError error={response.error} fieldErrors={response.fieldErrors} />
           )}
 
           {[
@@ -58,6 +57,7 @@ export default function NewUserPage() {
               <label htmlFor={field.id} className="text-sm font-medium text-zinc-600">{field.label}</label>
               <input id={field.id} name={field.id} type={field.type} placeholder={field.placeholder} required
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition" />
+              <FieldError fieldName={field.id} fieldErrors={response?.fieldErrors} />
             </div>
           ))}
 
@@ -69,6 +69,7 @@ export default function NewUserPage() {
               <option value="staff">Personal</option>
               <option value="admin">Administrador</option>
             </select>
+            <FieldError fieldName="role" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="flex gap-3 pt-2">

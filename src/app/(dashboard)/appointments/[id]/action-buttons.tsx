@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { cancelAppointment, deleteAppointment } from "@/app/actions/appointments";
 import { useRouter } from "next/navigation";
-import { XCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { XCircle, Trash2, CheckCircle } from "lucide-react";
+import { cancelAppointment, deleteAppointment, completeAppointment } from "@/app/actions/appointments";
+
 
 export function CancelAppointmentButton({ id }: { id: number }) {
   const router = useRouter();
@@ -58,6 +59,33 @@ export function DeleteAppointmentButton({ id, isAdmin }: { id: number; isAdmin: 
       className="flex items-center gap-2 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-500 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
       <Trash2 className="w-4 h-4" />
       {loading ? "Eliminando..." : "Eliminar"}
+    </button>
+  );
+}
+
+export function CompleteAppointmentButton({ id }: { id: number }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  async function handleComplete() {
+    if (!confirm("¿Marcar esta cita como completada?")) return;
+    setLoading(true);
+    const result = await completeAppointment(id);
+    const error = "error" in result ? String(result.error) : undefined;
+    if (error) {
+      toast.error(error);
+      setLoading(false);
+      return;
+    }
+    toast.success("Cita completada");
+    router.refresh();
+  }
+
+  return (
+    <button onClick={handleComplete} disabled={loading}
+      className="flex items-center gap-2 bg-green-50 hover:bg-green-100 disabled:opacity-60 text-green-600 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+      <CheckCircle className="w-4 h-4" />
+      {loading ? "Completando..." : "Completar cita"}
     </button>
   );
 }

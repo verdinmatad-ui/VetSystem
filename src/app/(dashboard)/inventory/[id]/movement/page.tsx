@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createStockMovement, getInventoryItemById } from "@/app/actions/inventory";
+import type { ActionResponse } from "@/lib/validation";
+import { FormError, FieldError } from "@/components/form-error";
 import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
@@ -13,7 +15,7 @@ export default function RegisterMovementPage() {
   const router = useRouter();
   const params = useParams();
   const itemId = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [item, setItem] = useState<any>(null);
   const [type, setType] = useState<"in" | "out">("in");
@@ -25,11 +27,11 @@ export default function RegisterMovementPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await createStockMovement(itemId, formData);
-    if (result.error) {
-      setError(result.error);
+    if (!result.success) {
+      setResponse(result);
       setLoading(false);
       return;
     }
@@ -59,11 +61,8 @@ export default function RegisterMovementPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError error={response.error} fieldErrors={response.fieldErrors} />
           )}
 
           <div className="space-y-1.5">
@@ -97,6 +96,7 @@ export default function RegisterMovementPage() {
             <label htmlFor="quantity" className="text-sm font-medium text-zinc-600">Cantidad</label>
             <input id="quantity" name="quantity" type="number" min="1" step="1" placeholder="10" required
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition" />
+            <FieldError fieldName="quantity" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="space-y-1.5">
@@ -105,6 +105,7 @@ export default function RegisterMovementPage() {
             </label>
             <textarea id="notes" name="notes" rows={2} placeholder="Monthly restock, expired batch, etc."
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none" />
+            <FieldError fieldName="notes" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="flex gap-3 pt-2">

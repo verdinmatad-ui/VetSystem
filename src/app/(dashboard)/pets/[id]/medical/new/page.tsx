@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createMedicalRecord } from "@/app/actions/medical";
+import type { ActionResponse } from "@/lib/validation";
+import { FormError, FieldError } from "@/components/form-error";
 import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
@@ -13,13 +15,17 @@ import Breadcrumb from "@/components/breadcrumb";
 export default function NewMedicalRecordPage({
   searchParams,
 }: {
-  searchParams?: { from?: string; appointmentId?: string };
+  searchParams?: Promise<{ from?: string; appointmentId?: string }>;
 }) {
-  const fromAppointment = searchParams?.from === "appointment";
-  const router = useRouter();
+  // usa React.use() para desenvolver la Promise
   const params = useParams();
+  const resolvedSearchParams = React.use(searchParams ?? Promise.resolve({}));
+  const fromAppointment = resolvedSearchParams?.from === "appointment";
+  const appointmentId = resolvedSearchParams?.appointmentId;
+
+  const router = useRouter();
   const petId = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [petName, setPetName] = useState("");
 
@@ -30,11 +36,11 @@ export default function NewMedicalRecordPage({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await createMedicalRecord(petId, formData);
-    if (result.error) {
-      setError(result.error);
+    if (!result.success) {
+      setResponse(result);
       setLoading(false);
       return;
     }
@@ -53,10 +59,10 @@ export default function NewMedicalRecordPage({
         ]}
       />
       {fromAppointment && (
-    <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-600 text-sm px-4 py-3 rounded-xl mb-4">
-      Creando registro médico desde una cita completada
-    </div>
-  )}
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 text-blue-600 text-sm px-4 py-3 rounded-xl mb-4">
+          Creando registro médico desde una cita completada
+        </div>
+      )}
       <div className="flex items-center gap-3 mb-6">
         <BackButton />
         <h1 className="text-xl font-semibold text-zinc-800">
@@ -66,11 +72,11 @@ export default function NewMedicalRecordPage({
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError
+              error={response.error}
+              fieldErrors={response.fieldErrors}
+            />
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -86,8 +92,17 @@ export default function NewMedicalRecordPage({
                 name="date"
                 type="datetime-local"
                 required
-                defaultValue={new Date().toISOString().slice(0, 16)}
+                defaultValue={new Date()
+                  .toLocaleString("sv-SE", {
+                    timeZone: "America/Mexico_City",
+                  })
+                  .replace(" ", "T")
+                  .slice(0, 16)}
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              />
+              <FieldError
+                fieldName="date"
+                fieldErrors={response?.fieldErrors}
               />
             </div>
             <div className="space-y-1.5">
@@ -105,6 +120,10 @@ export default function NewMedicalRecordPage({
                 placeholder="3.8"
                 required
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+              />
+              <FieldError
+                fieldName="weight"
+                fieldErrors={response?.fieldErrors}
               />
             </div>
           </div>
@@ -124,6 +143,10 @@ export default function NewMedicalRecordPage({
               required
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none"
             />
+            <FieldError
+              fieldName="diagnosis"
+              fieldErrors={response?.fieldErrors}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -140,6 +163,10 @@ export default function NewMedicalRecordPage({
               placeholder="Enter treatment..."
               required
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none"
+            />
+            <FieldError
+              fieldName="treatment"
+              fieldErrors={response?.fieldErrors}
             />
           </div>
 

@@ -7,14 +7,16 @@ import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle, Upload } from "lucide-react";
 import BackButton from "@/components/back-button";
 import Link from "next/link";
+import { FormError, FieldError } from "@/components/form-error";
 import toast from "react-hot-toast";
 import Breadcrumb from "@/components/breadcrumb";
+import type { ActionResponse } from "@/lib/validation";
 
 export default function EditPetPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [pet, setPet] = useState<any>(null);
   const [owners, setOwners] = useState<any[]>([]);
@@ -31,16 +33,18 @@ export default function EditPetPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await updatePet(id, formData);
-    if (result.error) {
-      setError(result.error);
+    
+    if (result.success) {
+      toast.success("Mascota actualizada correctamente");
+      router.push(`/pets/${id}`);
+    } else {
+      setResponse(result);
       setLoading(false);
-      return;
+      toast.error(result.error);
     }
-    toast.success("Mascota actualizada correctamente");
-    router.push(`/pets/${id}`);
   }
 
   if (!pet) return <div className="p-8 text-sm text-zinc-400">Loading...</div>;
@@ -63,11 +67,11 @@ export default function EditPetPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError 
+              error={response.error} 
+              fieldErrors={response.fieldErrors}
+            />
           )}
 
           {/* Photo upload */}
@@ -98,6 +102,7 @@ export default function EditPetPage() {
                 className="text-sm text-zinc-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-emerald-50 file:text-emerald-700 file:text-sm file:font-medium hover:file:bg-emerald-100 transition"
               />
             </div>
+            <FieldError fieldName="photo" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -149,6 +154,7 @@ export default function EditPetPage() {
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                 />
+                <FieldError fieldName={field.id} fieldErrors={response?.fieldErrors} />
               </div>
             ))}
 
@@ -170,6 +176,7 @@ export default function EditPetPage() {
                 <option value="male">Macho</option>
                 <option value="female">Hembra</option>
               </select>
+              <FieldError fieldName="gender" fieldErrors={response?.fieldErrors} />
             </div>
 
             <div className="space-y-1.5">
@@ -192,6 +199,7 @@ export default function EditPetPage() {
                   </option>
                 ))}
               </select>
+              <FieldError fieldName="ownerId" fieldErrors={response?.fieldErrors} />
             </div>
           </div>
 
@@ -205,8 +213,8 @@ export default function EditPetPage() {
               {loading ? "Guardando..." : "Guardar cambios"}
             </button>
             <Link
-              href="/pets"
-              className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors"
+              href={`/pets/${id}`}
+              className="text-zinc-700 hover:text-zinc-900 text-sm font-medium px-5 py-2.5 rounded-xl border border-zinc-200 transition-colors"
             >
               Cancelar
             </Link>
@@ -216,3 +224,4 @@ export default function EditPetPage() {
     </div>
   );
 }
+

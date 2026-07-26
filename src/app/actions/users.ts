@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { verifyAdmin } from "@/lib/auth-helpers";
+import { fieldErrorResponse, successResponse } from "@/lib/validation";
 
 export async function getUsers() {
   const session = await verifyAdmin();
@@ -16,15 +17,39 @@ export async function getUsers() {
 
 export async function createUser(formData: FormData) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const role = formData.get("role") as string;
 
-  if (!name || !email || !password || !role) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!name?.trim()) fieldErrors.name = "El nombre es requerido";
+  else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,100}$/.test(name)) {
+    fieldErrors.name = "El nombre debe contener solo letras (2-100 caracteres)";
+  }
+
+  if (!email?.trim()) fieldErrors.email = "El email es requerido";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = "Por favor ingresa un email válido";
+  }
+
+  if (!password) fieldErrors.password = "La contraseña es requerida";
+  else if (password.length < 8 || password.length > 30) {
+    fieldErrors.password = "La contraseña debe tener 8-30 caracteres";
+  }
+
+  if (!role) fieldErrors.role = "El rol es requerido";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa todos los campos", fieldErrors);
+  }
+
+  const existing = await prisma.user.findFirst({ where: { email } });
+  if (existing) {
+    return fieldErrorResponse("Este email ya está registrado", { email: "El email ya está en uso" });
   }
 
   const hashed = await bcrypt.hash(password, 10);
@@ -34,31 +59,39 @@ export async function createUser(formData: FormData) {
   });
 
   revalidatePath("/admin/users");
-  return { success: true };
+  return successResponse();
 }
 
 export async function updateUser(id: number, formData: FormData) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const role = formData.get("role") as string;
 
-  if (!name || !email || !role) {
-    return { error: "All fields are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!name?.trim()) fieldErrors.name = "El nombre es requerido";
+  else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,100}$/.test(name)) {
+    fieldErrors.name = "El nombre debe contener solo letras (2-100 caracteres)";
   }
 
-  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,100}$/.test(name)) {
-    return { error: "Name must contain only letters and spaces, 2–100 characters" };
+  if (!email?.trim()) fieldErrors.email = "El email es requerido";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fieldErrors.email = "Por favor ingresa un email válido";
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Please enter a valid email address" };
+  if (!role) fieldErrors.role = "El rol es requerido";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa todos los campos", fieldErrors);
   }
 
   const existing = await prisma.user.findFirst({ where: { email, NOT: { id } } });
-  if (existing) return { error: "This email is already in use" };
+  if (existing) {
+    return fieldErrorResponse("Este email ya está registrado", { email: "El email ya está en uso" });
+  }
 
   await prisma.user.update({
     where: { id },
@@ -66,21 +99,21 @@ export async function updateUser(id: number, formData: FormData) {
   });
 
   revalidatePath("/admin/users");
-  return { success: true };
+  return successResponse();
 }
 
 export async function deleteUser(id: number) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   const currentUserId = parseInt(session.user?.id as string);
   if (id === currentUserId) {
-    return { error: "You cannot delete your own account" };
+    return fieldErrorResponse("No puedes eliminar tu propia cuenta");
   }
 
   await prisma.user.delete({ where: { id } });
   revalidatePath("/admin/users");
-  return { success: true };
+  return successResponse();
 }
 
 export async function getUserById(id: number) {

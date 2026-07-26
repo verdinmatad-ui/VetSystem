@@ -47,7 +47,7 @@ export default function MedicalFilters({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <input
-          defaultValue={q}
+          value={q ?? ""}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar por diagnóstico o tratamiento..."
           className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
@@ -60,7 +60,7 @@ export default function MedicalFilters({
           <p className="text-xs font-medium text-zinc-400">Desde</p>
           <input
             type="date"
-            defaultValue={dateFrom}
+            value={dateFrom ?? ""}
             onChange={(e) =>
               updateParams({ dateFrom: e.target.value || undefined })
             }
@@ -71,7 +71,7 @@ export default function MedicalFilters({
           <p className="text-xs font-medium text-zinc-400">Hasta</p>
           <input
             type="date"
-            defaultValue={dateTo}
+            value={dateTo ?? ""}
             onChange={(e) =>
               updateParams({ dateTo: e.target.value || undefined })
             }

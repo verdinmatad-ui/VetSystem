@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { verifyAdmin } from "@/lib/auth-helpers";
+import { fieldErrorResponse, successResponse } from "@/lib/validation";
 
 export async function createMedicalRecord(petId: number, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "Unauthorized" };
+  if (!session?.user?.id) return fieldErrorResponse("No autorizado");
 
   const diagnosis = formData.get("diagnosis") as string;
   const treatment = formData.get("treatment") as string;
@@ -15,8 +16,32 @@ export async function createMedicalRecord(petId: number, formData: FormData) {
   const weight = formData.get("weight") as string;
   const date = formData.get("date") as string;
 
-  if (!diagnosis || !treatment || !weight || !date) {
-    return { error: "All required fields must be filled" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!diagnosis?.trim()) fieldErrors.diagnosis = "El diagnóstico es requerido";
+  if (!treatment?.trim()) fieldErrors.treatment = "El tratamiento es requerido";
+  if (!weight?.trim()) fieldErrors.weight = "El peso es requerido";
+  if (!date?.trim()) fieldErrors.date = "La fecha es requerida";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa los campos requeridos", fieldErrors);
+  }
+
+  if (new Date(date) > new Date()) {
+    fieldErrors.date = "La fecha no puede ser en el futuro";
+    return fieldErrorResponse("Fecha inválida", fieldErrors);
+  }
+
+  const weightNum = parseFloat(weight);
+  if (isNaN(weightNum) || weightNum <= 0) {
+    fieldErrors.weight = "El peso debe ser un número positivo";
+  }
+  if (!/^\d+(\.\d{1,2})?$/.test(weight)) {
+    fieldErrors.weight = "El peso debe tener máximo 2 decimales";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor corrige los errores", fieldErrors);
   }
 
   await prisma.medicalRecord.create({
@@ -24,7 +49,7 @@ export async function createMedicalRecord(petId: number, formData: FormData) {
       diagnosis,
       treatment,
       notes: notes || "",
-      weight: parseFloat(weight),
+      weight: weightNum,
       date: new Date(date),
       petId,
       userId: parseInt(session.user.id as string),
@@ -33,7 +58,7 @@ export async function createMedicalRecord(petId: number, formData: FormData) {
 
   revalidatePath(`/pets/${petId}/medical`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function updateMedicalRecord(
@@ -47,8 +72,32 @@ export async function updateMedicalRecord(
   const weight = formData.get("weight") as string;
   const date = formData.get("date") as string;
 
-  if (!diagnosis || !treatment || !weight || !date) {
-    return { error: "All required fields must be filled" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!diagnosis?.trim()) fieldErrors.diagnosis = "El diagnóstico es requerido";
+  if (!treatment?.trim()) fieldErrors.treatment = "El tratamiento es requerido";
+  if (!weight?.trim()) fieldErrors.weight = "El peso es requerido";
+  if (!date?.trim()) fieldErrors.date = "La fecha es requerida";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor completa los campos requeridos", fieldErrors);
+  }
+
+  if (new Date(date) > new Date()) {
+    fieldErrors.date = "La fecha no puede ser en el futuro";
+    return fieldErrorResponse("Fecha inválida", fieldErrors);
+  }
+
+  const weightNum = parseFloat(weight);
+  if (isNaN(weightNum) || weightNum <= 0) {
+    fieldErrors.weight = "El peso debe ser un número positivo";
+  }
+  if (!/^\d+(\.\d{1,2})?$/.test(weight)) {
+    fieldErrors.weight = "El peso debe tener máximo 2 decimales";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor corrige los errores", fieldErrors);
   }
 
   await prisma.medicalRecord.update({
@@ -57,24 +106,24 @@ export async function updateMedicalRecord(
       diagnosis,
       treatment,
       notes: notes || "",
-      weight: parseFloat(weight),
+      weight: weightNum,
       date: new Date(date),
     },
   });
 
   revalidatePath(`/pets/${petId}/medical`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function deleteMedicalRecord(id: number, petId: number) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   await prisma.medicalRecord.delete({ where: { id } });
   revalidatePath(`/pets/${petId}/medical`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function getMedicalRecords(petId: number) {
@@ -104,8 +153,24 @@ export async function createVaccination(petId: number, formData: FormData) {
   const dateApplied = formData.get("dateApplied") as string;
   const nextDoseDate = formData.get("nextDoseDate") as string;
 
-  if (!vaccineName || !dateApplied) {
-    return { error: "Vaccine name and date applied are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!vaccineName?.trim()) fieldErrors.vaccineName = "El nombre de la vacuna es requerido";
+  else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-]{1,50}$/.test(vaccineName)) {
+    fieldErrors.vaccineName = "El nombre debe contener solo letras, números y guiones (máx 50)";
+  }
+
+  if (!dateApplied) fieldErrors.dateApplied = "La fecha aplicada es requerida";
+  else if (new Date(dateApplied) > new Date()) {
+    fieldErrors.dateApplied = "La fecha no puede ser en el futuro";
+  }
+
+  if (nextDoseDate && new Date(nextDoseDate) <= new Date(dateApplied)) {
+    fieldErrors.nextDoseDate = "La próxima dosis debe ser después de la fecha aplicada";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor corrige los errores", fieldErrors);
   }
 
   await prisma.vaccination.create({
@@ -119,7 +184,7 @@ export async function createVaccination(petId: number, formData: FormData) {
 
   revalidatePath(`/pets/${petId}/vaccinations`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function updateVaccination(
@@ -131,8 +196,24 @@ export async function updateVaccination(
   const dateApplied = formData.get("dateApplied") as string;
   const nextDoseDate = formData.get("nextDoseDate") as string;
 
-  if (!vaccineName || !dateApplied) {
-    return { error: "Vaccine name and date applied are required" };
+  const fieldErrors: Record<string, string> = {};
+
+  if (!vaccineName?.trim()) fieldErrors.vaccineName = "El nombre de la vacuna es requerido";
+  else if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-]{1,50}$/.test(vaccineName)) {
+    fieldErrors.vaccineName = "El nombre debe contener solo letras, números y guiones (máx 50)";
+  }
+
+  if (!dateApplied) fieldErrors.dateApplied = "La fecha aplicada es requerida";
+  else if (new Date(dateApplied) > new Date()) {
+    fieldErrors.dateApplied = "La fecha no puede ser en el futuro";
+  }
+
+  if (nextDoseDate && new Date(nextDoseDate) <= new Date(dateApplied)) {
+    fieldErrors.nextDoseDate = "La próxima dosis debe ser después de la fecha aplicada";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return fieldErrorResponse("Por favor corrige los errores", fieldErrors);
   }
 
   await prisma.vaccination.update({
@@ -146,17 +227,17 @@ export async function updateVaccination(
 
   revalidatePath(`/pets/${petId}/vaccinations`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function deleteVaccination(id: number, petId: number) {
   const session = await verifyAdmin();
-  if (!session) return { error: "Unauthorized" };
+  if (!session) return fieldErrorResponse("No autorizado");
 
   await prisma.vaccination.delete({ where: { id } });
   revalidatePath(`/pets/${petId}/vaccinations`);
   revalidatePath(`/pets/${petId}`);
-  return { success: true };
+  return successResponse();
 }
 
 export async function getVaccinations(petId: number) {

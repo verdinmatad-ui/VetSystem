@@ -14,6 +14,7 @@ import Breadcrumb from "@/components/breadcrumb";
 import {
   CancelAppointmentButton,
   DeleteAppointmentButton,
+  CompleteAppointmentButton, // ← agrega
 } from "./action-buttons";
 import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
@@ -53,7 +54,7 @@ export default async function AppointmentDetailPage({
     { label: "Motivo", value: appointment.reason, icon: FileText },
     { label: "Registrado por", value: appointment.user.name, icon: User },
   ];
-const isAdmin = await isCurrentUserAdmin();
+  const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-xl">
@@ -66,31 +67,11 @@ const isAdmin = await isCurrentUserAdmin();
         ]}
       />
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <BackButton />
-          <h1 className="text-xl font-semibold text-zinc-800">
-            Detalle de la cita
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {appointment.status === "pending" && (
-            <>
-              <CancelAppointmentButton id={appointment.id} />
-              <Link
-                href={`/appointments/${appointment.id}/edit`}
-                className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-              >
-                <Pencil className="w-4 h-4" />
-                Editar
-              </Link>
-            </>
-          )}
-          {appointment.status === "cancelled" && (
-            <DeleteAppointmentButton id={appointment.id} isAdmin={isAdmin} />
-          )}
-        </div>
+      <div className="flex items-center gap-3 mb-6">
+        <BackButton />
+        <h1 className="text-xl font-semibold text-zinc-800">
+          Detalle de la cita
+        </h1>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -122,7 +103,7 @@ const isAdmin = await isCurrentUserAdmin();
           </span>
         </div>
 
-<div className="space-y-4">
+        <div className="space-y-4">
           {fields.map((field) => {
             const Icon = field.icon;
             return (
@@ -141,7 +122,25 @@ const isAdmin = await isCurrentUserAdmin();
           })}
         </div>
 
-        {/* ← AGREGA ESTO */}
+
+                {appointment.status === "pending" && (
+          <div className="mt-6 pt-6 border-t border-zinc-100 flex gap-2">
+            <CancelAppointmentButton id={appointment.id} />
+            <CompleteAppointmentButton id={appointment.id} />
+            <Link
+              href={`/appointments/${appointment.id}/edit`}
+              className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar
+            </Link>
+          </div>
+        )}
+        {appointment.status === "cancelled" && (
+          <div className="mt-6 pt-6 border-t border-zinc-100">
+            <DeleteAppointmentButton id={appointment.id} isAdmin={isAdmin} />
+          </div>
+        )}
         {appointment.status === "completed" && (
           <div className="mt-6 pt-6 border-t border-zinc-100">
             <Link

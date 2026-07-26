@@ -9,14 +9,16 @@ import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
 import CancelButton from "@/components/cancel-button";
+import { FormError, FieldError } from "@/components/form-error";
 import Breadcrumb from "@/components/breadcrumb";
 import toast from "react-hot-toast";
+import type { ActionResponse } from "@/lib/validation";
 
 export default function EditAppointmentPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [appointment, setAppointment] = useState<any>(null);
 
@@ -27,17 +29,19 @@ export default function EditAppointmentPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     formData.append("petId", String(appointment.petId));
     const result = await updateAppointment(id, formData);
-    if (result.error) {
-      setError(result.error);
+    
+    if (result.success) {
+      toast.success("Cita actualizada correctamente");
+      router.push(`/appointments/${id}`);
+    } else {
+      setResponse(result);
       setLoading(false);
-      return;
+      toast.error(result.error);
     }
-    toast.success("Cita actualizada correctamente");
-    router.push(`/appointments/${id}`);
   }
 
   if (!appointment)
@@ -47,9 +51,9 @@ export default function EditAppointmentPage() {
     <div className="p-8 max-w-xl">
       <Breadcrumb
         items={[
-          { label: "Appointments", href: "/appointments" },
+          { label: "Citas", href: "/appointments" },
           {
-            label: `${appointment.pet.name} - ${new Date(appointment.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`, href: `/appointments/${id}` },
+            label: `${appointment.pet.name} - ${new Date(appointment.date).toLocaleDateString("es-ES", { month: "short", day: "numeric" })}`, href: `/appointments/${id}` },
           { label: "Editar" },
         ]}
       />
@@ -62,11 +66,11 @@ export default function EditAppointmentPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError 
+              error={response.error} 
+              fieldErrors={response.fieldErrors}
+            />
           )}
 
           <div className="space-y-1.5">
@@ -90,6 +94,7 @@ export default function EditAppointmentPage() {
                 .slice(0, 16)}
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
             />
+            <FieldError fieldName="date" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="space-y-1.5">
@@ -107,6 +112,7 @@ export default function EditAppointmentPage() {
               defaultValue={appointment.reason}
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition resize-none"
             />
+            <FieldError fieldName="reason" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="flex gap-3 pt-2">

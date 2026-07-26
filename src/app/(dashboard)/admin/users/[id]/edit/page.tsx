@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { updateUser, getUserById, changeUserPassword, getCurrentUserId } from "@/app/actions/users";
+import type { ActionResponse } from "@/lib/validation";
+import { FormError, FieldError } from "@/components/form-error";
 import { useRouter, useParams } from "next/navigation";
 import { Save, AlertCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
@@ -13,12 +15,12 @@ export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
-  const [error, setError] = useState("");
+  const [response, setResponse] = useState<ActionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  const [passwordError, setPasswordError] = useState("");
+  const [passwordResponse, setPasswordResponse] = useState<ActionResponse | null>(null);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
@@ -30,11 +32,11 @@ export default function EditUserPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await updateUser(id, formData);
-    if (result.error) {
-      setError(result.error);
+    if (!result.success) {
+      setResponse(result);
       setLoading(false);
       return;
     }
@@ -45,11 +47,11 @@ export default function EditUserPage() {
   async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPasswordLoading(true);
-    setPasswordError("");
+    setPasswordResponse(null);
     const formData = new FormData(e.currentTarget);
     const result = await changeUserPassword(id, formData);
-    if (result.error) {
-      setPasswordError(result.error);
+    if (!result.success) {
+      setPasswordResponse(result);
       setPasswordLoading(false);
       return;
     }
@@ -77,11 +79,8 @@ export default function EditUserPage() {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
+          {response && !response.success && (
+            <FormError error={response.error} fieldErrors={response.fieldErrors} />
           )}
 
           {[
@@ -93,6 +92,7 @@ export default function EditUserPage() {
               <input id={field.id} name={field.id} type={field.type} placeholder={field.placeholder}
                 defaultValue={field.defaultValue} required
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition" />
+              <FieldError fieldName={field.id} fieldErrors={response?.fieldErrors} />
             </div>
           ))}
 
@@ -103,6 +103,7 @@ export default function EditUserPage() {
               <option value="staff">Staff</option>
               <option value="admin">Admin</option>
             </select>
+            <FieldError fieldName="role" fieldErrors={response?.fieldErrors} />
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -125,11 +126,8 @@ export default function EditUserPage() {
           </p>
         ) : (
           <form onSubmit={handlePasswordSubmit} className="space-y-4 mt-4">
-            {passwordError && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {passwordError}
-              </div>
+            {passwordResponse && !passwordResponse.success && (
+              <FormError error={passwordResponse.error} fieldErrors={passwordResponse.fieldErrors} />
             )}
 
             <div className="space-y-1.5">
@@ -137,6 +135,7 @@ export default function EditUserPage() {
               <input id="password" name="password" type="password" placeholder="Mínimo 8 caracteres"
                 value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required
                 className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition" />
+              <FieldError fieldName="password" fieldErrors={passwordResponse?.fieldErrors} />
             </div>
 
             <button type="submit" disabled={passwordLoading}
