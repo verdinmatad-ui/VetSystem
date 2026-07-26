@@ -5,6 +5,7 @@ import { Pencil, PawPrint, User, Calendar, Venus, Mars } from "lucide-react";
 import Breadcrumb from "@/components/breadcrumb";
 import DeleteButton from "@/components/delete-button";
 import BackButton from "@/components/back-button";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function PetProfilePage({
   params,
@@ -34,6 +35,7 @@ export default async function PetProfilePage({
         { label: "Pets", href: "/pets" },
         { label: pet.name },
       ];
+const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-2xl">
@@ -44,12 +46,13 @@ export default async function PetProfilePage({
           <h1 className="text-xl font-semibold text-zinc-800">Perfil de la mascota</h1>
         </div>
         <div className="flex items-center gap-2">
-          <DeleteButton
-            id={pet.id}
-            type="pet"
-            redirectTo="/pets"
-            confirmMessage="Are you sure you want to delete this pet? This action cannot be undone."
-          />
+<DeleteButton
+  id={pet.id}
+  type="pet"
+  redirectTo="/pets"
+  confirmMessage="Are you sure you want to delete this pet? This action cannot be undone."
+  isAdmin={isAdmin}
+/>
           <Link
             href={`/pets/${pet.id}/edit`}
             className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 text-sm font-medium px-4 py-2 rounded-xl transition-colors"

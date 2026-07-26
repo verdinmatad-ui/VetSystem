@@ -33,9 +33,11 @@ export function CancelAppointmentButton({ id }: { id: number }) {
   );
 }
 
-export function DeleteAppointmentButton({ id }: { id: number }) {
+export function DeleteAppointmentButton({ id, isAdmin }: { id: number; isAdmin: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  if (!isAdmin) return null;
 
   async function handleDelete() {
     if (!confirm("¿Seguro que quieres eliminar esta cita? Esta acción no se puede deshacer.")) return;

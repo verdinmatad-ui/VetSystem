@@ -7,6 +7,7 @@ import BackButton from "@/components/back-button";
 import DeleteButton from "@/components/delete-button";
 import SearchInput from "@/components/search-input";
 import Breadcrumb from "@/components/breadcrumb";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function VaccinationHistoryPage({
   params,
@@ -29,6 +30,7 @@ export default async function VaccinationHistoryPage({
         v.vaccineName.toLowerCase().includes(q.toLowerCase()),
       )
     : allVaccinations;
+  const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-2xl">
@@ -56,7 +58,10 @@ export default async function VaccinationHistoryPage({
       </div>
 
       <div className="mb-6">
-        <SearchInput placeholder="Buscar por nombre de vacuna..." defaultValue={q} />
+        <SearchInput
+          placeholder="Buscar por nombre de vacuna..."
+          defaultValue={q}
+        />
       </div>
 
       {vaccinations.length === 0 ? (
@@ -90,11 +95,13 @@ export default async function VaccinationHistoryPage({
                     petId={id}
                     redirectTo={`/pets/${id}/vaccinations`}
                     confirmMessage="Are you sure you want to delete this vaccination record?"
+                    isAdmin={isAdmin}
                   />
                 </div>
               </div>
               <p className="text-xs text-zinc-400">
-                Aplicada: {new Date(vac.dateApplied).toLocaleDateString("en-US")}
+                Aplicada:{" "}
+                {new Date(vac.dateApplied).toLocaleDateString("en-US")}
               </p>
               {vac.nextDoseDate && (
                 <p className="text-xs text-zinc-400 mt-0.5">

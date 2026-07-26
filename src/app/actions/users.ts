@@ -2,16 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import bcrypt from "bcryptjs";
-
-async function verifyAdmin() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  const user = await prisma.user.findUnique({ where: { id: parseInt(session.user.id as string) } });
-  if (user?.role !== "admin") return null;
-  return session;
-}
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function getUsers() {
   const session = await verifyAdmin();
@@ -34,21 +26,6 @@ export async function createUser(formData: FormData) {
   if (!name || !email || !password || !role) {
     return { error: "All fields are required" };
   }
-
-  if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,100}$/.test(name)) {
-    return { error: "Name must contain only letters and spaces, 2–100 characters" };
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Please enter a valid email address" };
-  }
-
-  if (password.length < 8) {
-    return { error: "Password must be at least 8 characters" };
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "This email is already in use" };
 
   const hashed = await bcrypt.hash(password, 10);
 
@@ -109,6 +86,7 @@ export async function deleteUser(id: number) {
 export async function getUserById(id: number) {
   const session = await verifyAdmin();
   if (!session) return null;
+
   return prisma.user.findUnique({
     where: { id },
     select: { id: true, name: true, email: true, role: true },

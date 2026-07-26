@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { writeFile } from "fs/promises";
 import path from "path";
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function createPet(formData: FormData) {
   const name = formData.get("name") as string;
@@ -108,6 +109,9 @@ export async function updatePet(id: number, formData: FormData) {
 }
 
 export async function deletePet(id: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   // Delete related records first
   await prisma.medicalRecord.deleteMany({ where: { petId: id } });
   await prisma.vaccination.deleteMany({ where: { petId: id } });

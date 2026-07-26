@@ -15,11 +15,14 @@ interface DeleteButtonProps {
   redirectTo: string;
   confirmMessage: string;
   petId?: number;
+  isAdmin: boolean;
 }
 
-export default function DeleteButton({ id, type, redirectTo, confirmMessage, petId }: DeleteButtonProps) {
+export default function DeleteButton({ id, type, redirectTo, confirmMessage, petId, isAdmin }: DeleteButtonProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  if (!isAdmin) return null;
 
   async function handleDelete() {
     if (!confirm(confirmMessage)) return;

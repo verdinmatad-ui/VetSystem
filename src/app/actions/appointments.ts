@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function createAppointment(formData: FormData) {
   const session = await auth();
@@ -143,6 +144,9 @@ export async function getAppointmentById(id: number) {
 }
 
 export async function deleteAppointment(id: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   const appointment = await prisma.appointment.findUnique({ where: { id } });
 
   if (!appointment) return { error: "Appointment not found" };

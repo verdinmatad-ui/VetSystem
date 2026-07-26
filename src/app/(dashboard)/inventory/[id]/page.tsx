@@ -8,6 +8,7 @@ import { Pencil, Package, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import BackButton from "@/components/back-button";
 import Breadcrumb from "@/components/breadcrumb";
 import DeleteButton from "@/components/delete-button";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function InventoryItemPage({
   params,
@@ -23,6 +24,7 @@ export default async function InventoryItemPage({
 
   const movements = await getItemMovements(id);
   const isLow = item.quantity <= item.minStock;
+  const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-2xl">
@@ -36,7 +38,9 @@ export default async function InventoryItemPage({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BackButton />
-          <h1 className="text-xl font-semibold text-zinc-800">Detalle del artículo</h1>
+          <h1 className="text-xl font-semibold text-zinc-800">
+            Detalle del artículo
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -51,6 +55,7 @@ export default async function InventoryItemPage({
             type="inventory"
             redirectTo="/inventory"
             confirmMessage="Are you sure you want to delete this item? All its movement history will be permanently deleted. This action cannot be undone."
+            isAdmin={isAdmin}
           />
           <Link
             href={`/inventory/${item.id}/edit`}
@@ -101,7 +106,9 @@ export default async function InventoryItemPage({
           Historial de movimientos
         </p>
         {movements.length === 0 ? (
-          <p className="text-sm text-zinc-400">Aún no hay movimientos registrados</p>
+          <p className="text-sm text-zinc-400">
+            Aún no hay movimientos registrados
+          </p>
         ) : (
           <div className="space-y-3">
             {movements.map((mov) => (

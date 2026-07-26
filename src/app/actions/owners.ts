@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function createOwner(formData: FormData) {
   const name = formData.get("name") as string;
@@ -74,6 +75,9 @@ export async function updateOwner(id: number, formData: FormData) {
 }
 
 export async function deleteOwner(id: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   const pets = await prisma.pet.count({ where: { ownerId: id } });
   if (pets > 0) {
     return { error: "This owner has registered pets. Please reassign or delete them first." };

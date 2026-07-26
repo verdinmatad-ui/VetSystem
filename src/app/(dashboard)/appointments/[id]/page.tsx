@@ -15,6 +15,7 @@ import {
   CancelAppointmentButton,
   DeleteAppointmentButton,
 } from "./action-buttons";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function AppointmentDetailPage({
   params,
@@ -52,6 +53,7 @@ export default async function AppointmentDetailPage({
     { label: "Motivo", value: appointment.reason, icon: FileText },
     { label: "Registrado por", value: appointment.user.name, icon: User },
   ];
+const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-xl">
@@ -86,7 +88,7 @@ export default async function AppointmentDetailPage({
             </>
           )}
           {appointment.status === "cancelled" && (
-            <DeleteAppointmentButton id={appointment.id} />
+            <DeleteAppointmentButton id={appointment.id} isAdmin={isAdmin} />
           )}
         </div>
       </div>

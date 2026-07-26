@@ -7,6 +7,7 @@ import BackButton from "@/components/back-button";
 import DeleteButton from "@/components/delete-button";
 import MedicalFilters from "./filters";
 import Breadcrumb from "@/components/breadcrumb";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function MedicalHistoryPage({
   params,
@@ -64,6 +65,7 @@ export default async function MedicalHistoryPage({
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }
+  const isAdmin = await isCurrentUserAdmin();
 
   return (
     <div className="p-8 max-w-2xl">
@@ -139,6 +141,7 @@ export default async function MedicalHistoryPage({
                     petId={id}
                     redirectTo={`/pets/${id}/medical`}
                     confirmMessage="Are you sure you want to delete this medical record?"
+                    isAdmin={isAdmin}
                   />
                 </div>
               </div>

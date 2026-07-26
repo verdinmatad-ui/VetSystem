@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function createMedicalRecord(petId: number, formData: FormData) {
   const session = await auth();
@@ -67,6 +68,9 @@ export async function updateMedicalRecord(
 }
 
 export async function deleteMedicalRecord(id: number, petId: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   await prisma.medicalRecord.delete({ where: { id } });
   revalidatePath(`/pets/${petId}/medical`);
   revalidatePath(`/pets/${petId}`);
@@ -146,6 +150,9 @@ export async function updateVaccination(
 }
 
 export async function deleteVaccination(id: number, petId: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   await prisma.vaccination.delete({ where: { id } });
   revalidatePath(`/pets/${petId}/vaccinations`);
   revalidatePath(`/pets/${petId}`);

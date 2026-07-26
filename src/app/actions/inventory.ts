@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { verifyAdmin } from "@/lib/auth-helpers";
 
 export async function createInventoryItem(formData: FormData) {
   const name = formData.get("name") as string;
@@ -154,6 +155,9 @@ export async function getItemMovements(itemId: number) {
 }
 
 export async function deleteInventoryItem(id: number) {
+  const session = await verifyAdmin();
+  if (!session) return { error: "Unauthorized" };
+
   await prisma.inventoryMovement.deleteMany({ where: { itemId: id } });
   await prisma.inventoryItem.delete({ where: { id } });
   revalidatePath("/inventory");

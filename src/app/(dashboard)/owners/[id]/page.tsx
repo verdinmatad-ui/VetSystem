@@ -14,6 +14,7 @@ import {
 import BackButton from "@/components/back-button";
 import DeleteButton from "@/components/delete-button";
 import Breadcrumb from "@/components/breadcrumb";
+import { isCurrentUserAdmin } from "@/lib/auth-helpers";
 
 export default async function OwnerProfilePage({
   params,
@@ -29,7 +30,7 @@ export default async function OwnerProfilePage({
 
   const pets = await getPets();
   const ownerPets = pets.filter((p) => p.ownerId === id);
-
+  const isAdmin = await isCurrentUserAdmin();
   return (
     <div className="p-8 max-w-2xl">
       <Breadcrumb
@@ -38,7 +39,9 @@ export default async function OwnerProfilePage({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <BackButton />
-          <h1 className="text-xl font-semibold text-zinc-800">Perfil del dueño</h1>
+          <h1 className="text-xl font-semibold text-zinc-800">
+            Perfil del dueño
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <DeleteButton
@@ -46,6 +49,7 @@ export default async function OwnerProfilePage({
             type="owner"
             redirectTo="/owners"
             confirmMessage="Are you sure you want to delete this owner? This action cannot be undone."
+            isAdmin={isAdmin}
           />
           <Link
             href={`/owners/${owner.id}/edit`}
