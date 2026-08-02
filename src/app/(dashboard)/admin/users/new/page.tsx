@@ -66,8 +66,8 @@ export default function NewUserPage() {
             <select id="role" name="role" required
               className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
               <option value="">Selecciona un rol</option>
-              <option value="staff">Personal</option>
-              <option value="admin">Administrador</option>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
             </select>
             <FieldError fieldName="role" fieldErrors={response?.fieldErrors} />
           </div>

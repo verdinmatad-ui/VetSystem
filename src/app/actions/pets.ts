@@ -189,7 +189,7 @@ export async function getPets(search?: string) {
 
 export async function getPetById(id: number) {
   if (!id || isNaN(id)) return null;
-  return prisma.pet.findUnique({
+  const pet = await prisma.pet.findUnique({
     where: { id },
     include: {
       owner: true,
@@ -197,4 +197,12 @@ export async function getPetById(id: number) {
       vaccinations: { orderBy: { dateApplied: "desc" }, take: 3 },
     },
   });
+  if (!pet) return null;
+  return {
+    ...pet,
+    medicalRecords: pet.medicalRecords.map((r) => ({
+      ...r,
+      weight: Number(r.weight),
+    })),
+  };
 }

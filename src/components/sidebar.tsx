@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, PawPrint, Calendar, Package, BarChart2, LogOut, Users, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, PawPrint, Calendar, Package, BarChart2, TrendingUp, LogOut, Users, ShieldCheck } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { getStockAlertsCount } from "@/app/actions/inventory";
 
@@ -13,6 +13,7 @@ const navItems = [
   { label: "Mascotas", href: "/pets", icon: PawPrint },
   { label: "Citas", href: "/appointments", icon: Calendar },
   { label: "Inventario", href: "/inventory", icon: Package },
+  { label: "Estadísticas", href: "/statistics", icon: TrendingUp },
   { label: "Reportes", href: "/reports", icon: BarChart2 },
 ];
 
