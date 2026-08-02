@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "VetSystem - Pruebas de API",
+    "description": "Colección de demostración. VetSystem usa Server Actions (no REST) para su CRUD; las únicas rutas HTTP reales son las de NextAuth. Se agregó /api/test como wrapper de demostración sobre getOwners para probar que exponer una Server Action vía endpoint REST también es posible.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "csrfToken", "value": "", "type": "string" },
+    { "key": "email", "value": "admin@vetclinic.com", "type": "string" },
+    { "key": "password", "value": "Admin123", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth (NextAuth)",
+      "item": [
+        {
+          "name": "1. Obtener CSRF Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/csrf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "csrf"]
+            },
+            "description": "NextAuth requiere un csrfToken válido (y su cookie asociada) antes de aceptar un POST a /callback/credentials. Postman guarda la cookie automáticamente si el cookie jar está activo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('csrfToken', data.csrfToken);",
+                  "pm.test('csrfToken recibido', function () {",
+                  "    pm.expect(data.csrfToken).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "2. Login (credentials)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "csrfToken", "value": "{{csrfToken}}", "type": "text" },
+                { "key": "email", "value": "{{email}}", "type": "text" },
+                { "key": "password", "value": "{{password}}", "type": "text" },
+                { "key": "json", "value": "true", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/callback/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "callback", "credentials"]
+            },
+            "description": "Login real contra NextAuth v5 (Credentials provider). Requiere haber corrido antes '1. Obtener CSRF Token' en la misma sesión de Postman (mismo cookie jar) para que csrfToken sea válido. Si es exitoso, NextAuth setea la cookie de sesión (JWT) que las siguientes peticiones reutilizan automáticamente."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Respuesta de login recibida (200/302)', function () {",
+                  "    pm.expect([200, 302]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Demostración: Server Action vía REST",
+      "item": [
+        {
+          "name": "GET /api/test (getOwners) - sin filtro",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test"]
+            },
+            "description": "Wrapper de demostración: src/app/api/test/route.ts llama directamente a getOwners() (src/app/actions/owners.ts). No forma parte del diseño final del backend (que usa Server Actions, no REST); se agregó solo para dejar evidencia de que exponer una Server Action como endpoint HTTP también es técnicamente posible."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Responde con un arreglo', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "GET /api/test (getOwners) - con búsqueda",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/test?search=maria",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "test"],
+              "query": [
+                { "key": "search", "value": "maria" }
+              ]
+            },
+            "description": "Mismo endpoint, probando el parámetro opcional 'search' que getOwners aplica sobre name/email (contains)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}
