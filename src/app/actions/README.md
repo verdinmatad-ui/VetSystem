@@ -2,7 +2,7 @@
 
 VetSystem es un monolito **Next.js 16 (App Router)**. No hay un servidor Express/NestJS aparte: toda la lógica de negocio vive en **Server Actions** (`"use server"`), funciones de servidor que Next.js expone como endpoints internos y que se invocan directo desde los componentes de React, sin pasar por `fetch` manual.
 
-> La única ruta HTTP tradicional del proyecto es `src/app/api/auth/`, que expone el flujo de NextAuth (login). Por eso las pruebas de API con Postman/Bruno no aplican de la misma forma que en un backend REST clásico; ver la nota al final de este documento.
+> La única ruta HTTP tradicional del proyecto es `src/app/api/auth/`, que expone el flujo de NextAuth (login). Por eso las pruebas de API con Postman/Bruno no aplican de la misma forma que en un backend REST clásico; ver [`postman/README.md`](../../../postman/README.md).
 
 ## Ejecución
 
@@ -66,16 +66,6 @@ Mínimo dos, con su objetivo:
 3. **`getMedicalRecords` (`medical.ts`)**: trae los registros médicos de una mascota incluyendo el `user` (veterinario/staff) que los creó. Objetivo: saber quién hizo cada diagnóstico, no solo qué se diagnosticó.
 4. **`getLowStockByCategory` (`statistics.ts`)**: consulta cruda (`$queryRaw`) que compara `quantity` contra `minStock` en `InventoryItem` y agrupa el resultado por `category`. Objetivo: distinguir si el riesgo de desabasto está más en insumos médicos o en operacionales.
 
-## Funcionalidad avanzada (no vista en clase)
-
-El **módulo de Estadísticas** (`statistics.ts` + `/statistics`) es la funcionalidad avanzada del proyecto. No es un CRUD más: agrega y transforma datos de todo el sistema para presentarlos como series temporales y comparativas:
-
-- Agrupación con `groupBy` y `_count` (citas por estado, mascotas por especie/género, diagnósticos más frecuentes).
-- Conteo sobre relaciones vía `orderBy: { pets: { _count: "desc" } }` (top de dueños).
-- Bucketing manual de fechas en 6 buckets mensuales (citas, movimientos de inventario y vacunas por mes), calculado en JavaScript a partir de los resultados de Prisma para no depender de funciones de fecha específicas de MySQL.
-- Una consulta con SQL crudo (`$queryRaw`) para la comparación de columnas (`quantity <= minStock`) que Prisma no soporta de forma nativa en su query builder.
-- El resultado se renderiza en el frontend con **Recharts** (gráficas de barras, pastel y línea).
-
 ## Nota sobre pruebas de API (Postman/Bruno)
 
 Como el CRUD se ejecuta vía Server Actions y no vía endpoints REST propios, no existe una colección Postman equivalente a "un endpoint por operación". Las operaciones se prueban:
@@ -83,3 +73,5 @@ Como el CRUD se ejecuta vía Server Actions y no vía endpoints REST propios, no
 - Funcionalmente, desde la interfaz (formularios de cada módulo).
 - A nivel de red, inspeccionando las peticiones `POST` que Next.js genera automáticamente hacia la ruta de la página con el header `Next-Action` (visibles en la pestaña Network del navegador).
 - La única ruta que sí es un endpoint HTTP convencional y se puede probar en Postman es `POST /api/auth/callback/credentials` (login), parte de NextAuth.
+
+El detalle completo de las pruebas que sí se hicieron con Postman está en [`postman/README.md`](../../../postman/README.md).

@@ -2,15 +2,22 @@
 
 Sistema web de gestión para clínicas veterinarias: dueños, mascotas, historiales médicos, vacunación, citas, inventario, estadísticas, reportes y administración de usuarios con acceso por rol (admin/staff).
 
+## Arquitectura general
+
+VetSystem es un monolito construido con **Next.js 16 (App Router)** y **React 19**, en TypeScript. No existe un servidor Express o NestJS por separado: la lógica de negocio vive en **Server Actions** dentro de `src/app/actions/`, que Next.js expone como endpoints internos y que se invocan directo desde los componentes de React. **Prisma ORM** conecta esas Server Actions con una base de datos **MySQL**. La autenticación se maneja con **NextAuth v5** (Credentials, sesión JWT), cuya única ruta HTTP tradicional es `src/app/api/auth/`. El resto del sistema —dueños, mascotas, historial médico, vacunación, citas, inventario, estadísticas y reportes— no expone endpoints REST propios.
+
+![Arquitectura general de VetSystem](./docs/architecture.png)
+
 ## Documentación por etapa
 
 Este README cubre la visión general, el stack y la instalación del proyecto completo. Cada etapa tiene su propio README con más detalle:
 
 | Etapa | Ubicación |
 |---|---|
-| Base de datos (modelo, diagrama, scripts) | [`prisma/README.md`](./prisma/README.md) |
+| Base de datos (modelo, diagrama ER, scripts) | [`prisma/README.md`](./prisma/README.md) |
 | Backend (Server Actions, CRUD, consultas, funcionalidad avanzada) | [`src/app/actions/README.md`](./src/app/actions/README.md) |
-| Frontend (rutas, componentes, ejecución) | [`src/app/README.md`](./src/app/README.md) |
+| Frontend (rutas, componentes, capturas, ejecución) | [`src/app/README.md`](./src/app/README.md) |
+| Pruebas de API (Postman) | [`postman/README.md`](./postman/README.md) |
 
 ## Stack
 
@@ -102,7 +109,7 @@ se ejecuta primero `prisma/ensure-admin.ts`, un script automático e idempotente
 > ```
 > para tener con qué iniciar sesión.
 
-> ⚠️ **El seed anterior (`prisma/seed.ts`) ya no existe en el repo**, pero `package.json` todavía lo referencia en el bloque `"prisma": { "seed": "..." }`. 
+> ⚠️ **El seed anterior (`prisma/seed.ts`) ya no existe en el repo**, pero `package.json` todavía lo referencia en el bloque `"prisma": { "seed": "..." }`.
 
 ## 5. Correr el proyecto
 
@@ -154,5 +161,5 @@ y `ensure-admin.ts` va a recrear el administrador por defecto (`admin@vetclinic.
 
 - Las fotos de mascota que se suban se guardan en `public/uploads/` (el directorio ya existe en el repo; su contenido no se versiona, salvo un `.gitkeep`).
 - `src/middleware.ts` protege todas las rutas: sin sesión redirige a `/login`, y las rutas bajo `/admin` están restringidas a usuarios con rol `admin`.
-- **Arquitectura del backend:** este proyecto es un monolito Next.js. Toda la lógica de negocio (CRUD, validaciones, consultas con relaciones) vive en Server Actions dentro de `src/app/actions/` en lugar de endpoints REST independientes. La única ruta HTTP tradicional es `src/app/api/auth/`, que expone el flujo de NextAuth. Por eso el CRUD no se prueba con Postman/Bruno como en un backend REST clásico; el detalle está en [`src/app/actions/README.md`](./src/app/actions/README.md).
+- **Arquitectura del backend:** este proyecto es un monolito Next.js. Toda la lógica de negocio (CRUD, validaciones, consultas con relaciones) vive en Server Actions dentro de `src/app/actions/` en lugar de endpoints REST independientes. La única ruta HTTP tradicional es `src/app/api/auth/`, que expone el flujo de NextAuth. Por eso el CRUD no se prueba con Postman/Bruno como en un backend REST clásico; el detalle está en [`src/app/actions/README.md`](./src/app/actions/README.md) y en [`postman/README.md`](./postman/README.md).
 - El módulo de **Estadísticas** (`/statistics`) centraliza gráficas (citas, mascotas, inventario, vacunas, diagnósticos) construidas con Recharts a partir de agregaciones en `src/app/actions/statistics.ts`.

@@ -1,8 +1,6 @@
 # Frontend
 
-Interfaz web de VetSystem, construida con **Next.js 16 (App Router)** y **React 19**. No es una SPA separada del backend: las páginas son Server Components que llaman directo a los Server Actions de `src/app/actions/` (ver `src/app/actions/README.md`).
-
-> Las capturas de pantalla de la interfaz en ejecución están en el documento de presentación del proyecto, no en este README.
+Interfaz web de VetSystem, construida con **Next.js 16 (App Router)** y **React 19**. No es una SPA separada del backend: las páginas son Server Components que llaman directo a los Server Actions de `src/app/actions/` (ver [`src/app/actions/README.md`](../actions/README.md)).
 
 ## Ejecución
 
@@ -13,6 +11,38 @@ npm run dev
 ```
 
 Abrir [http://localhost:3000](http://localhost:3000). Redirige a `/login` si no hay sesión activa.
+
+## Capturas de pantalla
+
+**Panel principal (dashboard)** — KPIs del día y alertas de stock bajo:
+
+![Dashboard de VetSystem](../../docs/dashboard.png)
+
+**Dueños** — listado con búsqueda:
+
+![Listado de dueños](../../docs/owners.png)
+
+**Nueva mascota** — formulario de registro:
+
+![Formulario de nueva mascota](../../docs/pet-form.png)
+
+**Citas** — vista de calendario:
+
+![Calendario de citas](../../docs/appointments-calendar.png)
+
+**Inventario** — detalle de artículo y alerta de stock bajo:
+
+![Detalle de artículo de inventario](../../docs/inventory-detail.png)
+
+**Estadísticas** — gráficas del módulo avanzado:
+
+![Módulo de estadísticas](../../docs/statistics.png)
+
+**Reportes** — exportación filtrable a PDF:
+
+![Reporte de movimientos de inventario](../../docs/reports.png)
+
+> Ajusten las rutas de las imágenes de arriba si mueven las capturas a otra carpeta — están pensadas para vivir en `docs/` en la raíz del repo.
 
 ## Librerías usadas en el frontend
 

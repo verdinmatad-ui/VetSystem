@@ -2,6 +2,10 @@
 
 Modelo de datos, scripts y notas sobre la base de datos de VetSystem. Motor: **MySQL**, gestionado con **Prisma ORM**.
 
+## Diagrama del modelo
+
+![Diagrama entidad-relación de VetSystem](../docs/er-diagram.png)
+
 ## Entidades y relaciones
 
 | Modelo | Descripción | Relaciones |
