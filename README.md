@@ -1,6 +1,16 @@
-# VetSystem — CANNES
+# VetSystem
 
-Sistema web de gestión para la clínica veterinaria CANNES: dueños, mascotas, historiales médicos, vacunación, citas, inventario, reportes y administración de usuarios con acceso por rol (admin/staff).
+Sistema web de gestión para clínicas veterinarias: dueños, mascotas, historiales médicos, vacunación, citas, inventario, estadísticas, reportes y administración de usuarios con acceso por rol (admin/staff).
+
+## Documentación por etapa
+
+Este README cubre la visión general, el stack y la instalación del proyecto completo. Cada etapa tiene su propio README con más detalle:
+
+| Etapa | Ubicación |
+|---|---|
+| Base de datos (modelo, diagrama, scripts) | [`prisma/README.md`](./prisma/README.md) |
+| Backend (Server Actions, CRUD, consultas, funcionalidad avanzada) | [`src/app/actions/README.md`](./src/app/actions/README.md) |
+| Frontend (rutas, componentes, ejecución) | [`src/app/README.md`](./src/app/README.md) |
 
 ## Stack
 
@@ -8,6 +18,7 @@ Sistema web de gestión para la clínica veterinaria CANNES: dueños, mascotas, 
 - [Prisma](https://www.prisma.io) ORM sobre **MySQL**
 - [NextAuth v5](https://authjs.dev) (Credentials) para autenticación
 - Tailwind CSS 4 + shadcn/ui
+- [Recharts](https://recharts.org) para las gráficas del módulo de estadísticas
 - `@react-pdf/renderer` para la exportación de reportes a PDF
 
 ## Requisitos previos
@@ -50,7 +61,19 @@ AUTH_SECRET="genera-un-valor-aleatorio-largo-aqui"
 
 ## 3. Preparar la base de datos
 
-Aplicar las migraciones existentes (crea todas las tablas: usuarios, dueños, mascotas, historiales, vacunas, citas, inventario, movimientos):
+Prisma no crea la base de datos por ti, solo las tablas dentro de ella. Si aún no existe una base de datos vacía con el nombre que pusiste en `DATABASE_URL`, créala con:
+
+```bash
+npm run db:create
+```
+
+Lee `DATABASE_URL` desde tu `.env` y ejecuta un `CREATE DATABASE IF NOT EXISTS` usando el cliente `mysql` (debe estar instalado y en el PATH). Si prefieres crear la base de datos y aplicar las migraciones en un solo paso:
+
+```bash
+npm run db:create -- --migrate
+```
+
+Si ya tienes la base de datos creada (por ejemplo, la creaste a mano o con otra herramienta), sáltate este paso y aplica directamente las migraciones existentes (crea todas las tablas: usuarios, dueños, mascotas, historiales, vacunas, citas, inventario, movimientos):
 
 ```bash
 npx prisma migrate deploy
@@ -60,7 +83,7 @@ npx prisma migrate deploy
 
 ## 4. Primer arranque y acceso
 
-El sistema **no trae ningún usuario por defecto en la base de datos** — pero no hace falta crearlo a mano. Cada vez que corres:
+El sistema **no trae ningún usuario por defecto en la base de datos**, pero no hace falta crearlo a mano. Cada vez que corres:
 
 ```bash
 npm start
@@ -71,7 +94,7 @@ se ejecuta primero `prisma/ensure-admin.ts`, un script automático e idempotente
 - Email: `admin@vetclinic.com`
 - Password: `Admin123`
 
-(configurable con las variables de entorno `DEFAULT_ADMIN_NAME`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD` si quieren usar otras credenciales). Si ya existe un admin, el script no hace nada — es seguro correrlo en cada arranque.
+(configurable con las variables de entorno `DEFAULT_ADMIN_NAME`, `DEFAULT_ADMIN_EMAIL`, `DEFAULT_ADMIN_PASSWORD` si quieren usar otras credenciales). Si ya existe un admin, el script no hace nada: es seguro correrlo en cada arranque.
 
 > ⚠️ **Importante:** este script **solo se dispara con `npm start`** (producción), no con `npm run dev`. Si van a desarrollar con `npm run dev` y la base está vacía, corran una vez manualmente:
 > ```bash
@@ -104,11 +127,12 @@ En ambos casos, abre [http://localhost:3000](http://localhost:3000). Redirige au
 | `npm run build` | Compila la app para producción |
 | `npm start` | Corre `ensure-admin.ts` y luego levanta la build de producción (requiere `npm run build` antes) |
 | `npm run lint` | Corre ESLint |
+| `npm run db:create` | Crea la base de datos vacía en MySQL a partir de `DATABASE_URL` (agrega `-- --migrate` para aplicar migraciones justo después) |
 | `npm run db:reset` | Borra TODOS los datos (usuarios incluidos) pidiendo confirmación escrita; no crea ningún usuario. Usar `npm run db:reset -- --force` para saltarse la confirmación |
 | `npx prisma migrate dev` | Crea/aplica migraciones en desarrollo |
 | `npx prisma migrate deploy` | Aplica migraciones existentes sin generar nuevas |
 | `npx prisma studio` | Interfaz visual para ver/editar la base de datos directamente |
-| ~~`npx prisma db seed`~~ | ⚠️ Roto — apunta a un archivo que ya no existe (ver pendientes) |
+| ~~`npx prisma db seed`~~ | ⚠️ Roto: apunta a un archivo que ya no existe |
 
 ## Dejar la base de datos limpia (para la demo)
 
@@ -118,7 +142,7 @@ Usa el script propio del proyecto, no `npx prisma migrate reset` (ese además es
 npm run db:reset
 ```
 
-Va a pedir que escribas `RESET` para confirmar (o usa `npm run db:reset -- --force` para saltarte la confirmación). Esto borra todo — usuarios, dueños, mascotas, citas, historiales, vacunas e inventario — y no deja ningún usuario. Para volver a tener acceso, simplemente corre:
+Va a pedir que escribas `RESET` para confirmar (o usa `npm run db:reset -- --force` para saltarte la confirmación). Esto borra todo: usuarios, dueños, mascotas, citas, historiales, vacunas e inventario, y no deja ningún usuario. Para volver a tener acceso, simplemente corre:
 
 ```bash
 npm start
@@ -130,4 +154,5 @@ y `ensure-admin.ts` va a recrear el administrador por defecto (`admin@vetclinic.
 
 - Las fotos de mascota que se suban se guardan en `public/uploads/` (el directorio ya existe en el repo; su contenido no se versiona, salvo un `.gitkeep`).
 - `src/middleware.ts` protege todas las rutas: sin sesión redirige a `/login`, y las rutas bajo `/admin` están restringidas a usuarios con rol `admin`.
-
+- **Arquitectura del backend:** este proyecto es un monolito Next.js. Toda la lógica de negocio (CRUD, validaciones, consultas con relaciones) vive en Server Actions dentro de `src/app/actions/` en lugar de endpoints REST independientes. La única ruta HTTP tradicional es `src/app/api/auth/`, que expone el flujo de NextAuth. Por eso el CRUD no se prueba con Postman/Bruno como en un backend REST clásico; el detalle está en [`src/app/actions/README.md`](./src/app/actions/README.md).
+- El módulo de **Estadísticas** (`/statistics`) centraliza gráficas (citas, mascotas, inventario, vacunas, diagnósticos) construidas con Recharts a partir de agregaciones en `src/app/actions/statistics.ts`.
